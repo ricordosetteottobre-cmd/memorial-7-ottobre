@@ -1,11 +1,197 @@
 <!DOCTYPE html>
 <html lang="it">
-  <head>
-    <meta charset="utf-8" />
-    <title>Mappa Commemorativa 7 Ottobre 2023</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-  </head>
-  <body>
-    <div id="root"></div>
-  </body>
+<head>
+  <meta charset="utf-8" />
+  <title>Mappa commemorativa 7 ottobre</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <!-- Includi il CSS di Leaflet -->
+  <link
+    rel="stylesheet"
+    href="https://unpkg.com/leaflet@1.9.3/dist/leaflet.css"
+    integrity="sha256-6oIVJ+9ZfE1FJiXqVx5KZ/qgLZ1kPnP8cC6KXm+6H0M="
+    crossorigin=""
+  />
+
+  <style>
+    body, html { margin: 0; padding: 0; height: 100%; }
+    #map { width: 100%; height: 100%; }
+    .popup-header {
+      font-weight: bold;
+      margin-bottom: 0.5em;
+    }
+    .popup-victims {
+      color: red;
+      margin-bottom: 0.5em;
+    }
+  </style>
+</head>
+<body>
+  <div id="map"></div>
+
+  <!-- Includi lo script di Leaflet -->
+  <script
+    src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js"
+    integrity="sha256-soXkYOLIayQ2cfGVVf4nq1HVOIxleS6M3JbvAEsWWBk="
+    crossorigin=""
+  ></script>
+
+  <script>
+    // Dati dei luoghi: puoi anche spostare questo in un file JSON esterno
+    const locations = [
+      {
+        id: 'nova',
+        name: 'Nova Festival',
+        type: 'festival',
+        lat: 31.330,
+        lon: 34.486,
+        victims: 370,
+        description: "Festival musicale Supernova Sukkot Gathering. Centinaia di giovani celebravano la musica e la pace quando sono stati attaccati all'alba.",
+        memorial: "In memoria di tutti coloro che ballavano per la pace"
+      },
+      {
+        id: 'reim',
+        name: "Re'im",
+        type: 'kibbutz',
+        lat: 31.345,
+        lon: 34.490,
+        victims: 19,
+        description: "Kibbutz vicino al sito del festival, pesantemente colpito durante l'attacco."
+      },
+      {
+        id: 'kfaraza',
+        name: "Kfar Aza",
+        type: 'kibbutz',
+        lat: 31.515,
+        lon: 34.485,
+        victims: 62,
+        description: "Uno dei kibbutz più colpiti, con intere famiglie uccise nelle loro case."
+      },
+      {
+        id: 'beeri',
+        name: "Be'eri",
+        type: 'kibbutz',
+        lat: 31.455,
+        lon: 34.455,
+        victims: 101,
+        description: "Il kibbutz con il maggior numero di vittime. Circa il 10% della popolazione è stata uccisa."
+      },
+      {
+        id: 'sderot',
+        name: 'Sderot',
+        type: 'city',
+        lat: 31.525,
+        lon: 34.595,
+        victims: 50,
+        description: "Città vicino al confine, colpita da razzi e infiltrazioni terroristiche."
+      },
+      {
+        id: 'kisufim',
+        name: 'Kisufim',
+        type: 'kibbutz',
+        lat: 31.385,
+        lon: 34.430,
+        victims: 6,
+        description: "Kibbutz agricolo attaccato nelle prime ore del mattino."
+      },
+      {
+        id: 'nirim',
+        name: 'Nirim',
+        type: 'kibbutz',
+        lat: 31.395,
+        lon: 34.445,
+        victims: 8,
+        description: "Piccolo kibbutz che ha resistito per ore prima dell'arrivo dei soccorsi."
+      },
+      {
+        id: 'nahaloz',
+        name: 'Nahal Oz',
+        type: 'kibbutz',
+        lat: 31.460,
+        lon: 34.525,
+        victims: 15,
+        description: "Kibbutz al confine, molti civili uccisi e rapiti."
+      },
+      {
+        id: 'alumim',
+        name: 'Alumim',
+        type: 'kibbutz',
+        lat: 31.425,
+        lon: 34.515,
+        victims: 7,
+        description: "Comunità agricola colpita durante l'attacco."
+      },
+      {
+        id: 'ofakim',
+        name: 'Ofakim',
+        type: 'city',
+        lat: 31.315,
+        lon: 34.620,
+        victims: 52,
+        description: "Città più interna dove i terroristi hanno combattuto per ore."
+      },
+      {
+        id: 'netivot',
+        name: 'Netivot',
+        type: 'city',
+        lat: 31.425,
+        lon: 34.595,
+        victims: 8,
+        description: "Città colpita da razzi durante l'attacco."
+      },
+      {
+        id: 'zikim',
+        name: 'Zikim',
+        type: 'base',
+        lat: 31.605,
+        lon: 34.490,
+        victims: 21,
+        description: "Base militare vicina al confine, tra i primi obiettivi dell'attacco."
+      }
+    ];
+
+    // Inizializza la mappa
+    const map = L.map('map').setView([31.45, 34.50], 10);
+
+    // Aggiungi tile layer (OpenStreetMap)
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '&copy; OpenStreetMap contributors'
+    }).addTo(map);
+
+    // Funzione per decidere colore dell'icona in base al tipo
+    function getMarkerColor(type) {
+      switch (type) {
+        case 'festival': return 'purple';
+        case 'kibbutz': return 'blue';
+        case 'city': return 'red';
+        case 'base': return 'green';
+        default: return 'gray';
+      }
+    }
+
+    // Per ogni location, aggiungi un marker con popup
+    locations.forEach(loc => {
+      const marker = L.circleMarker([loc.lat, loc.lon], {
+        radius: 8,
+        color: getMarkerColor(loc.type),
+        fillOpacity: 0.7,
+        weight: 1
+      }).addTo(map);
+
+      let popupHtml = `
+        <div class="popup-header">${loc.name}</div>
+        <div class="popup-victims">${loc.victims} vittime</div>
+        <div>${loc.description}</div>
+      `;
+      if (loc.type === 'festival' && loc.memorial) {
+        popupHtml += `<div style="margin-top:0.8em; font-style: italic; color: purple;">
+                       "${loc.memorial}"
+                     </div>`;
+      }
+      marker.bindPopup(popupHtml);
+    });
+
+  </script>
+</body>
 </html>
+
